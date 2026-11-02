@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Miner Control Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0b0f;
+    --bg-grad: radial-gradient(circle at 20% -10%, rgba(247,147,26,0.12), transparent 40%),
+               radial-gradient(circle at 90% 10%, rgba(99,102,241,0.10), transparent 35%);
+    --card: #14161d;
+    --border: #23262f;
+    --border-soft: #1b1e26;
+    --text: #edeef2;
+    --muted: #8b92a3;
+    --muted-soft: #5c6270;
+    --accent: #f7931a;
+    --accent-soft: rgba(247,147,26,0.14);
+    --ok: #22c55e;
+    --ok-soft: rgba(34,197,94,0.14);
+    --bad: #ef4444;
+    --bad-soft: rgba(239,68,68,0.14);
+    --warn: #eab308;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 8px 30px rgba(0,0,0,0.35);
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    margin: 0;
+    background-color: var(--bg);
+    background-image: var(--bg-grad);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    color: var(--text);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 32px 28px 60px;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .summary-row, .panel, .card { animation: fadeUp 0.35s ease both; }
+  .grid .card:nth-child(1) { animation-delay: 0.02s; }
+  .grid .card:nth-child(2) { animation-delay: 0.06s; }
+  .grid .card:nth-child(3) { animation-delay: 0.10s; }
+  .grid .card:nth-child(4) { animation-delay: 0.14s; }
+  .grid .card:nth-child(n+5) { animation-delay: 0.16s; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-icon {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), #ffb84d);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; box-shadow: 0 4px 16px rgba(247,147,26,0.35);
+  }
+  .brand h1 { font-size: 18px; margin: 0; font-weight: 700; letter-spacing: -0.01em; }
+  .brand .tag { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn {
+    padding: 10px 18px; border-radius: 10px; border: 1px solid var(--border);
+    background: #1a1d26; color: var(--text); cursor: pointer;
+    font-size: 13px; font-weight: 600; transition: all 0.15s ease;
+  }
+  .btn:hover { border-color: var(--accent); background: #1e222c; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn.primary { background: linear-gradient(135deg, var(--accent), #e8850f); border-color: transparent; color: #111; }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.small { padding: 6px 12px; font-size: 12px; }
+
+  .summary-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px; margin-bottom: 24px;
+  }
+  .summary-card {
+    background: var(--card); border: 1px solid var(--border-soft); border-radius: var(--radius);
+    padding: 18px 20px; position: relative; overflow: hidden;
+  }
+  .summary-card .label { font-size: 12px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .summary-card .value { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+  .summary-card .value.accent { color: var(--accent); }
+  .summary-card .value.ok { color: var(--ok); }
+  .summary-card .sub { font-size: 11px; color: var(--muted-soft); margin-top: 4px; }
+
+  .panel { background: var(--card); border: 1px solid var(--border-soft); border-radius: var(--radius); padding: 20px 22px; margin-bottom: 20px; box-shadow: var(--shadow); }
+  .panel-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+
+  .add-form { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .add-form input, .add-form select {
+    flex: 1; min-width: 140px; padding: 10px 12px; border-radius: 10px;
+    border: 1px solid var(--border); background: #0d0f14; color: var(--text);
+    font-size: 13px; outline: none; transition: border-color 0.15s ease;
+  }
+  .add-form input:focus, .add-form select:focus { border-color: var(--accent); }
+  .add-form input::placeholder { color: var(--muted-soft); }
+  .form-hint { color: var(--muted-soft); font-size: 12px; margin-top: 10px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 16px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border-soft); border-radius: var(--radius);
+    padding: 20px; transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  .card:hover { border-color: #2c303c; transform: translateY(-2px); }
+  .card-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .name { font-weight: 700; font-size: 15px; letter-spacing: -0.01em; }
+  .os-tag { color: var(--muted); font-weight: 400; font-size: 12px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .badge.online { background: var(--ok-soft); color: var(--ok); }
+  .badge.online .dot { background: var(--ok); box-shadow: 0 0 8px var(--ok); animation: pulse 2s ease-in-out infinite; }
+  .badge.offline { background: var(--bad-soft); color: var(--bad); }
+  .badge.offline .dot { background: var(--bad); }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .crash-banner { background: var(--bad-soft); color: #fca5a5; font-size: 12px; padding: 10px 12px; border-radius: var(--radius-sm); margin-bottom: 12px; border: 1px solid rgba(239,68,68,0.25); line-height: 1.5; }
+
+  .card-body { display: flex; gap: 14px; margin-bottom: 14px; }
+  .temp-gauge { flex-shrink: 0; width: 64px; height: 64px; position: relative; }
+  .temp-gauge svg { width: 64px; height: 64px; transform: rotate(-90deg); }
+  .temp-gauge .gauge-bg { fill: none; stroke: var(--border-soft); stroke-width: 7; }
+  .temp-gauge .gauge-fg { fill: none; stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease, stroke 0.6s ease; }
+  .temp-gauge .gauge-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+  .temp-gauge .gauge-label small { font-size: 8px; font-weight: 500; color: var(--muted); margin-inline-start: 1px; }
+
+  .stat-grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-content: start; }
+  .stat { background: #0d0f14; border: 1px solid var(--border-soft); border-radius: var(--radius-sm); padding: 8px 10px; }
+  .stat .k { font-size: 10px; color: var(--muted); margin-bottom: 3px; }
+  .stat .v { font-size: 14px; font-weight: 700; }
+  .stat .v.hashrate { color: var(--accent); }
+
+  .sparkline { width: 100%; height: 34px; margin-bottom: 12px; display: block; }
+  .sparkline path { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+  .sparkline .fill { fill: url(#sparkGrad); stroke: none; }
+
+  code, .mono { font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace; }
+
+  .modes { display: flex; gap: 6px; margin-bottom: 8px; }
+  .modes button {
+    flex: 1; padding: 8px 4px; font-size: 12px; font-weight: 600; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s ease;
+  }
+  .modes button:hover { border-color: var(--accent); color: var(--text); }
+  .modes button.active { background: var(--accent); border-color: var(--accent); color: #111; }
+
+  .actions { display: flex; gap: 6px; }
+  .actions button {
+    flex: 1; padding: 8px; font-size: 12px; font-weight: 600; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s ease;
+  }
+  .actions button:hover { border-color: #3a3f4d; color: var(--text); }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty-state .big { font-size: 32px; margin-bottom: 10px; }
+
+  /* Log viewer modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(5,6,9,0.75); backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center; z-index: 100; padding: 24px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    width: min(720px, 100%); max-height: 80vh; display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-soft); }
+  .modal-head .title { font-weight: 700; font-size: 14px; }
+  .modal-close { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; line-height: 1; padding: 4px; }
+  .modal-close:hover { color: var(--text); }
+  .modal-body { padding: 14px 20px; overflow-y: auto; font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace; font-size: 12px; line-height: 1.6; color: #c8ccd6; white-space: pre-wrap; word-break: break-all; }
+
+  ::selection { background: var(--accent-soft); }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-icon">⛏️</div>
+      <div>
+        <h1>Miner Control Panel</h1>
+        <div class="tag">Live status &amp; control across all your servers</div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <button class="btn" onclick="setModeAll('normal')">Normal — all</button>
+      <button class="btn" onclick="setModeAll('balanced')">Balanced — all</button>
+      <button class="btn primary" onclick="setModeAll('max')">⚡ Max — all</button>
+      <a class="btn" href="/logout" style="text-decoration:none; display:inline-flex; align-items:center;">Sign out</a>
+    </div>
+  </div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="label">Servers online</div>
+      <div class="value ok" id="sum-online">—</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Total hashrate</div>
+      <div class="value accent" id="sum-hashrate">—</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Auto-restarts</div>
+      <div class="value" id="sum-restarts">—</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Est. earnings</div>
+      <div class="value ok" id="sum-earnings">—</div>
+      <div class="sub" id="sum-earnings-sub">&nbsp;</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">➕ Add a server</div>
+    <div class="add-form">
+      <input id="new-name" placeholder="Name (e.g. linux-2)">
+      <input id="new-addr" placeholder="Address:port (e.g. 10.0.0.20:9090)">
+      <input id="new-token" placeholder="Agent token">
+      <select id="new-os">
+        <option value="linux">linux</option>
+        <option value="windows">windows</option>
+      </select>
+      <button class="btn primary" onclick="addServer()">Add server</button>
+    </div>
+    <div class="form-hint">This is the same name / address / token the install command printed on the new server.</div>
+  </div>
+
+  <div id="grid" class="grid"></div>
+
+  <div class="modal-overlay" id="log-modal">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="title" id="log-modal-title">Logs</div>
+        <button class="modal-close" onclick="closeLogs()">✕</button>
+      </div>
+      <div class="modal-body" id="log-modal-body">Loading…</div>
+    </div>
+  </div>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f7931a" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#f7931a" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<script>
+let logModalServer = null;
+let logModalTimer = null;
+
+async function refresh() {
+  const res = await fetch('/api/status-all');
+  const list = await res.json();
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+
+  if (list.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column: 1/-1;">
+      <div class="big">🖥️</div>
+      <div>No servers yet — add one above to get started.</div>
+    </div>`;
+    document.getElementById('sum-online').textContent = '0/0';
+    document.getElementById('sum-hashrate').textContent = '0 H/s';
+    document.getElementById('sum-restarts').textContent = '0';
+    return;
+  }
+
+  let totalHashrate = 0, onlineCount = 0, totalRestarts = 0;
+
+  for (const s of list) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    let hashrate = '—', accepted = '—', mode = '—', uptime = '—', crashLoop = false, restarts = 0;
+    let temp = null, hashVal = 0;
+    if (s.online && s.data) {
+      mode = (s.data.mode || '—');
+      crashLoop = !!s.data.crash_loop;
+      restarts = s.data.restarts ?? 0;
+      totalRestarts += restarts;
+      if (typeof s.data.cpu_temp_c === 'number') temp = s.data.cpu_temp_c;
+      if (s.data.xmrig) {
+        const hr = s.data.xmrig.hashrate;
+        if (hr && hr.total && hr.total[0]) {
+          hashVal = hr.total[0];
+          hashrate = hashVal.toFixed(1) + ' H/s';
+          totalHashrate += hashVal;
+        }
+        if (s.data.xmrig.results) {
+          accepted = s.data.xmrig.results.shares_good + ' / ' + s.data.xmrig.results.shares_total;
+        }
+        if (s.data.xmrig.uptime) uptime = formatUptime(s.data.xmrig.uptime);
+      }
+      onlineCount++;
+    }
+
+    card.innerHTML = `
+      <div class="card-head">
+        <span class="name">${escapeHtml(s.name)} <span class="os-tag">(${escapeHtml(s.os || '?')})</span></span>
+        <span class="badge ${s.online ? 'online' : 'offline'}"><span class="dot"></span>${s.online ? 'Online' : 'Offline'}</span>
+      </div>
+      ${crashLoop ? '<div class="crash-banner">⚠ Auto-retry stopped — likely a configuration error. Fix it, then start manually.</div>' : ''}
+      <div class="card-body">
+        ${tempGaugeHtml(temp)}
+        <div class="stat-grid">
+          <div class="stat"><div class="k">Hashrate</div><div class="v hashrate">${hashrate}</div></div>
+          <div class="stat"><div class="k">Shares</div><div class="v">${accepted}</div></div>
+          <div class="stat"><div class="k">Uptime</div><div class="v">${uptime}</div></div>
+          <div class="stat"><div class="k">Restarts</div><div class="v">${s.online ? restarts : '—'}</div></div>
+        </div>
+      </div>
+      <svg class="sparkline" id="spark-${cssId(s.name)}" viewBox="0 0 100 30" preserveAspectRatio="none"></svg>
+      <div class="modes">
+        <button class="${mode==='normal'?'active':''}" onclick="setMode('${escapeJs(s.name)}','normal')">Normal</button>
+        <button class="${mode==='balanced'?'active':''}" onclick="setMode('${escapeJs(s.name)}','balanced')">Balanced</button>
+        <button class="${mode==='max'?'active':''}" onclick="setMode('${escapeJs(s.name)}','max')">Max</button>
+      </div>
+      <div class="actions">
+        <button onclick="action('${escapeJs(s.name)}','start')">▶ Start</button>
+        <button onclick="action('${escapeJs(s.name)}','stop')">■ Stop</button>
+        <button onclick="openLogs('${escapeJs(s.name)}')">📜 Logs</button>
+      </div>
+    `;
+    grid.appendChild(card);
+
+    if (s.online) loadSparkline(s.name);
+  }
+
+  document.getElementById('sum-online').textContent = `${onlineCount}/${list.length}`;
+  document.getElementById('sum-hashrate').textContent = `${totalHashrate.toFixed(1)} H/s`;
+  document.getElementById('sum-restarts').textContent = totalRestarts;
+}
+
+function tempGaugeHtml(temp) {
+  if (temp === null) {
+    return `<div class="temp-gauge">
+      <svg viewBox="0 0 100 100"><circle class="gauge-bg" cx="50" cy="50" r="42"/></svg>
+      <div class="gauge-label" style="color:var(--muted-soft); font-size:10px;">n/a</div>
+    </div>`;
+  }
+  const circumference = 2 * Math.PI * 42;
+  const pct = Math.max(0, Math.min(1, temp / 100));
+  const offset = circumference * (1 - pct);
+  let color = 'var(--ok)';
+  if (temp >= 80) color = 'var(--bad)';
+  else if (temp >= 65) color = 'var(--warn)';
+  return `<div class="temp-gauge">
+    <svg viewBox="0 0 100 100">
+      <circle class="gauge-bg" cx="50" cy="50" r="42"/>
+      <circle class="gauge-fg" cx="50" cy="50" r="42"
+        stroke="${color}"
+        stroke-dasharray="${circumference}"
+        stroke-dashoffset="${offset}"/>
+    </svg>
+    <div class="gauge-label">${Math.round(temp)}<small>°C</small></div>
+  </div>`;
+}
+
+async function loadSparkline(name) {
+  try {
+    const res = await fetch(`/api/history?server=${encodeURIComponent(name)}`);
+    const points = await res.json();
+    const el = document.getElementById(`spark-${cssId(name)}`);
+    if (!el || !points || points.length < 2) return;
+    const values = points.map(p => p.h);
+    const min = Math.min(...values), max = Math.max(...values);
+    const range = (max - min) || 1;
+    const step = 100 / (values.length - 1);
+    const coords = values.map((v, i) => {
+      const x = i * step;
+      const y = 28 - ((v - min) / range) * 26;
+      return [x, y];
+    });
+    const linePath = coords.map((c, i) => (i === 0 ? 'M' : 'L') + c[0].toFixed(1) + ',' + c[1].toFixed(1)).join(' ');
+    const fillPath = linePath + ` L100,30 L0,30 Z`;
+    el.innerHTML = `<path class="fill" d="${fillPath}"/><path d="${linePath}"/>`;
+  } catch (e) { /* history not available yet, ignore */ }
+}
+
+function formatUptime(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
+function cssId(s) { return String(s).replace(/[^a-zA-Z0-9_-]/g, '_'); }
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeJs(s) { return String(s).replace(/['\\]/g, '\\$&'); }
+
+async function setMode(server, mode) {
+  await fetch('/api/mode', { method: 'POST', body: JSON.stringify({ server, mode }) });
+  refresh();
+}
+async function setModeAll(mode) {
+  await fetch('/api/mode', { method: 'POST', body: JSON.stringify({ server: '*', mode }) });
+  refresh();
+}
+async function action(server, act) {
+  await fetch('/api/action', { method: 'POST', body: JSON.stringify({ server, action: act }) });
+  refresh();
+}
+async function addServer() {
+  const name = document.getElementById('new-name').value.trim();
+  const addr = document.getElementById('new-addr').value.trim();
+  const token = document.getElementById('new-token').value.trim();
+  const os = document.getElementById('new-os').value;
+  if (!name || !addr) { alert('Name and address are required'); return; }
+  const res = await fetch('/api/add-server', {
+    method: 'POST',
+    body: JSON.stringify({ name, addr, token, os })
+  });
+  if (!res.ok) { alert('Failed to add server'); return; }
+  document.getElementById('new-name').value = '';
+  document.getElementById('new-addr').value = '';
+  document.getElementById('new-token').value = '';
+  refresh();
+}
+
+function openLogs(name) {
+  logModalServer = name;
+  document.getElementById('log-modal-title').textContent = `Logs — ${name}`;
+  document.getElementById('log-modal-body').textContent = 'Loading…';
+  document.getElementById('log-modal').classList.add('open');
+  loadLogs();
+  logModalTimer = setInterval(loadLogs, 3000);
+}
+function closeLogs() {
+  document.getElementById('log-modal').classList.remove('open');
+  if (logModalTimer) clearInterval(logModalTimer);
+  logModalServer = null;
+}
+async function loadLogs() {
+  if (!logModalServer) return;
+  try {
+    const res = await fetch(`/api/logs?server=${encodeURIComponent(logModalServer)}`);
+    const data = await res.json();
+    const body = document.getElementById('log-modal-body');
+    const lines = data.logs || [];
+    const wasAtBottom = body.scrollTop + body.clientHeight >= body.scrollHeight - 30;
+    body.textContent = lines.length ? lines.join('\n') : '(no output yet)';
+    if (wasAtBottom) body.scrollTop = body.scrollHeight;
+  } catch (e) {
+    document.getElementById('log-modal-body').textContent = 'Failed to load logs.';
+  }
+}
+
+async function refreshEarnings() {
+  try {
+    const res = await fetch('/api/earnings');
+    const e = await res.json();
+    const val = document.getElementById('sum-earnings');
+    const sub = document.getElementById('sum-earnings-sub');
+    if (!e.available) {
+      val.textContent = 'n/a';
+      sub.textContent = 'price/network data unavailable';
+      return;
+    }
+    val.textContent = '$' + e.usd_per_day.toFixed(2) + '/day';
+    sub.textContent = `${e.xmr_per_day.toFixed(4)} XMR/day · @ $${e.price_usd.toFixed(0)}`;
+  } catch (e) { /* ignore */ }
+}
+
+refresh();
+refreshEarnings();
+setInterval(refresh, 5000);
+setInterval(refreshEarnings, 30000);
+</script>
+</body>
+</html>
