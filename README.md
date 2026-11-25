@@ -6,7 +6,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://golang.org)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows-lightgrey)](https://gitlab.com/specterog/MoneroMinerSuite)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows-lightgrey)](https://github.com/Batman-Priv/MoneroMinerSuite)
 [![XMRig](https://img.shields.io/badge/XMRig-v6.26.0-orange)](https://github.com/xmrig/xmrig)
 
 ---
@@ -210,7 +210,7 @@ Clone the repository and build the agent and orchestrator:
 
 ```bash
 # Clone the repository
-git clone https://gitlab.com/specterog/MoneroMinerSuite.git
+git clone https://github.com/Batman-Priv/MoneroMinerSuite.git
 cd MoneroMinerSuite
 
 # Build the agent for all platforms
@@ -1453,7 +1453,7 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 ## 📞 Support & Community
 
-- **GitHub Issues**: [https://gitlab.com/specterog/MoneroMinerSuite/issues](https://gitlab.com/specterog/MoneroMinerSuite/issues)
+- **GitHub Issues**: [https://github.com/Batman-Priv/MoneroMinerSuite/issues](https://github.com/Batman-Priv/MoneroMinerSuite/issues)
 - **Monero Community**: [https://monero.com/community](https://monero.com/community)
 - **Cake Wallet Support**: [https://cakewallet.com/support](https://cakewallet.com/support)
 - **Monero Reddit**: [r/Monero](https://www.reddit.com/r/Monero/)
